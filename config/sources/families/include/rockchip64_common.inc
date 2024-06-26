@@ -32,7 +32,7 @@ case $BRANCH in
 		;;
 
 	edge)
-		declare -g KERNEL_MAJOR_MINOR="6.8"
+		declare -g KERNEL_MAJOR_MINOR="6.9"
 		declare -g LINUXFAMILY=rockchip64
 		declare -g LINUXCONFIG='linux-rockchip64-'$BRANCH
 		;;
@@ -173,6 +173,10 @@ prepare_boot_configuration() {
 			ATF_COMPILE='no'
 			;;
 	esac
+
+	if [[ ! -z $BL32_BLOB ]]; then
+		UBOOT_TARGET_MAP="BL32=$RKBIN_DIR/$BL32_BLOB ${UBOOT_TARGET_MAP}"
+	fi
 
 	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
 

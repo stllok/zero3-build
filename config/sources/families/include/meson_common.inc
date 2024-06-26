@@ -42,16 +42,16 @@ esac
 
 case $BRANCH in
 
-        legacy)
-                declare -g KERNEL_MAJOR_MINOR="6.1"
-                ;;
+	legacy)
+		declare -g KERNEL_MAJOR_MINOR="6.1"
+		;;
 
 	current)
 		declare -g KERNEL_MAJOR_MINOR="6.6"
 		;;
 
 	edge)
-		declare -g KERNEL_MAJOR_MINOR="6.8"
+		declare -g KERNEL_MAJOR_MINOR="6.9"
 		;;
 esac
 
