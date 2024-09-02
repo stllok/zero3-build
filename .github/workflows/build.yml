@@ -1,0 +1,58 @@
+name: Rebuild Armbian
+
+on:
+  # Trigger the workflow manually
+  workflow_dispatch:
+
+  # Trigger the workflow on push to the main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  rebuild-armbian:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up QEMU for ARM emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      # Cache Armbian build dependencies and sources
+      - name: Cache Armbian build files
+        uses: actions/cache@v3
+        with:
+          path: |
+            /var/cache/apt/archives/*
+            /var/lib/apt/lists/*
+            cache/*
+          key: ${{ runner.os }}-armbian-${{ hashFiles('config/kernel/linux-sunxi64-current.config') }}
+
+      # Install required packages
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget curl unzip p7zip-full
+          sudo modprobe btrfs
+
+      # Configure and Build the Armbian images
+      - name: Build Armbian image
+        run: |
+          ./compile.sh BOARD=orangepizero3 BRANCH=current RELEASE=bookworm \
+          REPOSITORY_INSTALL=armbian-config,armbian-firmware \
+          BUILD_DESKTOP=no BUILD_MINIMAL=yes EXTERNAL=yes EXTERNAL_NEW=compile \
+          EXPERT=yes IMAGE_XZ_COMPRESSION_RATIO=9 SEVENZIP=yes \
+          ROOTFS_TYPE=btrfs BTRFS_COMPRESSION=zstd \
+          USE_MAINLINE_GOOGLE_MIRROR=yes KERNEL_CONFIGURE=no
+
+      # Upload the built image as an artifact (optional)
+      - name: Upload Armbian image
+        uses: actions/upload-artifact@v3
+        with:
+          name: armbian-image
+          path: output/images/*
