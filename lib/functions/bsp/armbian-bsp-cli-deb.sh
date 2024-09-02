@@ -119,7 +119,9 @@ function compile_armbian-bsp-cli() {
 
 	# copy common files from a premade directory structure
 	# @TODO this includes systemd config, assumes things about serial console, etc, that need dynamism or just to not exist with modern systemd
-	run_host_command_logged rsync -a "${SRC}"/packages/bsp/common/* "${destination}"
+	display_alert "Copying common bsp files" "packages/bsp/common" "info"
+	run_host_command_logged rsync -av "${SRC}"/packages/bsp/common/* "${destination}"
+	wait_for_disk_sync "after rsync'ing package/bsp/common for bsp-cli"
 
 	mkdir -p "${destination}"/usr/share/armbian/
 
@@ -206,6 +208,23 @@ function compile_armbian-bsp-cli() {
 	artifact_package_hook_helper_board_side_functions "postinst" board_side_bsp_cli_postinst_base "${postinst_functions[@]}" board_side_bsp_cli_postinst_finish
 	unset board_side_bsp_cli_postinst_base board_side_bsp_cli_postinst_update_uboot_bootscript board_side_bsp_cli_postinst_finish
 
+	### preventing upgrading stable kernels beyond version if defined
+	# if freeze variable is removed, upgrade becomes possible again
+	if [[ "${BETA}" != "yes" ]]; then
+		for pin_variants in $(echo $KERNEL_UPGRADE_FREEZE | sed "s/,/ /g"); do
+		extracted_pins=(${pin_variants//@/ })
+			if [[ "${BRANCH}-${LINUXFAMILY}" == "${extracted_pins[0]}" ]]; then
+				cat <<- EOF >> "${destination}"/etc/apt/preferences.d/frozen-armbian
+				Package: linux-*-${extracted_pins[0]}
+				Pin: version ${extracted_pins[1]}
+				Pin-Priority: 999
+				EOF
+			fi
+		done
+	else
+		touch "${destination}"/etc/apt/preferences.d/frozen-armbian
+	fi
+
 	# add some summary to the image # @TODO: another?
 	fingerprint_image "${destination}/etc/armbian.txt"
 
@@ -242,7 +261,7 @@ function reversion_armbian-bsp-cli_deb_contents() {
 		depends_base_files=""
 	fi
 	cat <<- EOF >> "${control_file_new}"
-		Depends: bash, linux-base, u-boot-tools, initramfs-tools, lsb-release, fping${depends_base_files}, device-tree-compiler
+		Depends: bash, linux-base, u-boot-tools, initramfs-tools, lsb-release, fping, device-tree-compiler${depends_base_files}
 		Replaces: zram-config, armbian-bsp-cli-${BOARD}${EXTRA_BSP_NAME} (<< ${REVISION})
 		Breaks: armbian-bsp-cli-${BOARD}${EXTRA_BSP_NAME} (<< ${REVISION})
 	EOF

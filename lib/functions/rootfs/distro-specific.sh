@@ -11,8 +11,7 @@ function install_distribution_specific() {
 	display_alert "Applying distribution specific tweaks for" "${RELEASE:-}" "info"
 
 	# disable broken service, the problem is in default misconfiguration
-	# disable hostapd as it needs to be configured to start correctly
-	disable_systemd_service_sdcard smartmontools.service smartd.service hostapd.service
+	disable_systemd_service_sdcard smartmontools.service smartd.service
 
 	if [[ "${DISTRIBUTION}" == "Ubuntu" ]]; then
 
@@ -38,7 +37,7 @@ function install_distribution_specific() {
 
 	# install our base-files package (this replaces the original from Debian/Ubuntu)
 	if [[ "${KEEP_ORIGINAL_OS_RELEASE:-"no"}" != "yes" ]]; then
-		install_artifact_deb_chroot "armbian-base-files"
+		install_artifact_deb_chroot "armbian-base-files" "--allow-downgrades"
 	fi
 
 	# Set DNS server if systemd-resolved is in use

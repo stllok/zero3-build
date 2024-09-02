@@ -26,7 +26,7 @@
 - Superuser rights (configured sudo or root access).
 - Make sure your system is up-to-date! Outdated Docker binaries, for example, can cause trouble.
 
-For stable branch use `--branch=v24.05`
+For stable branch use `--branch=v24.08`
 
 ```bash
 apt-get -y install git
@@ -220,6 +220,7 @@ Free support:
 
 - [Forums](https://forum.armbian.com) for Participate in Armbian
 - IRC: `#armbian` on Libera.chat / oftc.net
+- Matrix: [https://forum.armbian.com/topic/40413-enter-the-matrix/](https://forum.armbian.com/topic/40413-enter-the-matrix/)
 - Discord: [https://discord.gg/armbian](https://discord.gg/armbian)
 - Follow [@armbian](https://twitter.com/armbian) on 𝕏 (formerly known as Twitter), <a rel="me" href="https://fosstodon.org/@armbian">Mastodon</a> or [LinkedIn](https://www.linkedin.com/company/armbian).
 - Bugs: [issues](https://github.com/armbian/build/issues) / [JIRA](https://armbian.atlassian.net/jira/dashboards/10000)
