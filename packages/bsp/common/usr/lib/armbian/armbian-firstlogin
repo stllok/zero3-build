@@ -247,11 +247,12 @@ set_shell() {
 					;;
 			esac
 		done
-	fi
-	SHELL_PATH=$(grep "/$USER_SHELL$" /etc/shells | tail -1)
-
-	chsh -s "$(grep -iF "/$USER_SHELL" /etc/shells | tail -1)"
+	# Display shell selection only if needs to be selected
 	echo -e "\nShell: \x1B[92m${USER_SHELL^^}\x1B[0m"
+	fi
+
+	SHELL_PATH=$(grep "/$USER_SHELL$" /etc/shells | tail -1)
+	chsh -s "$(grep -iF "/$USER_SHELL" /etc/shells | tail -1)"
 
 	# change shell for future users
 	sed -i "s|^SHELL=.*|SHELL=${SHELL_PATH}|" /etc/default/useradd
@@ -306,8 +307,8 @@ set_timezone_and_locales() {
 				while [[ ${scanning} -lt 3 ]]; do
 					sleep 0.5
 					scanning=$(( scanning + 1 ))
-					ARRAY=($(iwlist ${WIFI_DEVICE} scanning 2> /dev/null | egrep 'ESSID' | sed 's/^[ \t]*//' | sed 's/"//g' | sed 's/ESSID://' | sed '/^$/d' | sort | uniq | awk 'BEGIN{FS=OFS=","} {$NF=++count OFS $NF} 1'))
-					if [[ $? == 0 ]]; then broken=0; break; fi
+					readarray -t ARRAY < <(iw dev ${WIFI_DEVICE} scan 2> /dev/null | egrep 'SSID' | sed 's/^[ \t]*//' | sed 's/"//g' | sed 's/SSID: //' | sed '/^$/d' | sort | uniq | awk 'BEGIN{FS=OFS=","} {$NF=++count OFS $NF} 1')
+					if [[ ${#ARRAY[@]} -gt 0 ]]; then broken=0; break; fi
 				done
 				# wifi can also fail
 				if [[ ${broken} == 1 ]]; then
@@ -319,14 +320,14 @@ set_timezone_and_locales() {
 					while [[ ${scanning} -lt 3 ]]; do
 						scanning=$(( scanning + 1 ))
 						while [[ 1 ]] ; do
-							for str in ${ARRAY[@]}; do echo $str | sed "s/,/ \t /g"; done
+							for str in "${ARRAY[@]}"; do echo $str | sed "s/,/ \t /"; done
 							echo ""
 							read -r -p "Enter a number of SSID: " input
 							if [[ "$input" =~ ^[0-9]{,2}$ ]] ; then break; fi
 						done
 						# get password
 						while [[ -n "${input}" ]] ; do
-							SSID=$(echo ${ARRAY[$input-1]} | cut -d"," -f2)
+							SSID=$(echo ${ARRAY[$input-1]} | cut -d"," -f2-)
 							echo ""
 							read -r -p "Enter a password for ${SSID}: " password
 							break
@@ -651,6 +652,8 @@ if [[ -f /root/.not_logged_in_yet && -n $(tty) ]]; then
 
 	clear
 
+	# In case VENDORPRETTYNAME is defined, display that
+	[[ -n "${VENDORPRETTYNAME}" ]] && VENDOR="$VENDORPRETTYNAME"
 	echo -e "Welcome to \e[1m\e[97m${VENDOR}\x1B[0m! \n"
 	echo -e "Documentation: \e[1m\e[92m${VENDORDOCS}\x1B[0m | Community support: \e[1m\e[92m${VENDORSUPPORT}\x1B[0m\n"
 
@@ -895,7 +898,10 @@ if [[ -f /root/.not_logged_in_yet && -n $(tty) ]]; then
 		who -la | grep root | grep -q tty1 && exit 1
 
 	else
-		# no display manager detected
+		# no display manager detected -> clear screen and show motd
+		clear
+		run-parts --lsbsysinit /etc/update-motd.d
+
 		# Display reboot recommendation if necessary
 		if [[ -f /var/run/resize2fs-reboot ]]; then
 			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
