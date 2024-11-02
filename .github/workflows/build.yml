@@ -15,17 +15,17 @@ jobs:
     steps:
       # Check out the repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Set up QEMU for ARM emulation
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
 
       # Cache Armbian build dependencies and sources
       - name: Cache Armbian build files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             /var/cache/apt/archives/*
@@ -52,7 +52,7 @@ jobs:
 
       # Upload the built image as an artifact (optional)
       - name: Upload Armbian image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: armbian-image
           path: output/images/*
